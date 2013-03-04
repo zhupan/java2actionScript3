@@ -1,0 +1,9 @@
+Manifest-Version: 0.1
+Implementation-Title: JAVA TO ACTIONSCRIPT 3
+Implementation-Version: 0.1
+Build-Jdk: 6.0
+Class-Path: lib/commons/commons-lang-2.3.jar lib/commons/commons-logging-1.1.1.jar lib/spring/spring.jar
+    lib/derbysoft/derbysoft-remote-dswitch.jar lib/derbysoft/derbysoft-remote-share.jar lib/derbysoft/dmodules.jar
+    lib/oval/net.sf.oval_1.20.jar
+    lib/commons/commons-collections-3.2.jar
+Main-Class: com.derbysoft.java2as3.Main

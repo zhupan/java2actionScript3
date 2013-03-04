@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<project name="java2as" default="jarfile" basedir=".">
+
+    <property file="build.properties"/>
+
+    <path id="compile.classpath">
+        <fileset dir="${lib.dir}">
+            <include name="**/*.jar"/>
+        </fileset>
+        <fileset dir="${env_lib.dir}">
+            <include name="**/*.jar"/>
+        </fileset>
+    </path>
+
+    <path id="test.classpath">
+        <path refid="compile.classpath"/>
+        <pathelement location="${src.build.dir}"/>
+        <pathelement location="${test.build.dir}"/>
+    </path>
+
+    <target name="usage">
+        <echo message="------------------------------------------"/>
+        <echo message="-------    JAVA TO ACTIONSCRIPT    -------"/>
+        <echo message="------------------------------------------"/>
+        <echo message=""/>
+    </target>
+
+    <target name="clean">
+        <delete dir="${dist.dir}"/>
+    </target>
+
+    <target name="init" depends="usage">
+        <mkdir dir="${build.dir}"/>
+        <mkdir dir="${src.build.dir}"/>
+        <mkdir dir="${test.build.dir}"/>
+        <mkdir dir="${checkstyle.report.dir}"/>
+        <mkdir dir="${test.report.dir}"/>
+        <mkdir dir="${cmd.dir}"/>
+        <mkdir dir="${cmd.dir}/lib"/>
+    </target>
+
+    <taskdef resource="checkstyletask.properties" classpathref="test.classpath"/>
+
+    <target name="checkstyle" description="Run checkstyle on all java files">
+        <sequential>
+            <checkstyle config="${env_lib.dir}/checkstyle/checkstyle.xml">
+                <fileset dir=".">
+                    <include name="**/*.java"/>
+                    <exclude name="**/Main.java"/>
+                </fileset>
+                <formatter type="plain"/>
+                <formatter type="xml" toFile="${checkstyle.report.dir}/checkstyle-log.xml"/>
+                <classpath refid="test.classpath"/>
+            </checkstyle>
+        </sequential>
+    </target>
+
+    <target name="compile" depends="clean,init,checkstyle" description="compile">
+
+        <javac srcdir="${src.dir}" destdir="${src.build.dir}" debug="on" classpathref="compile.classpath"
+               deprecation="on"
+               includes="**/*.java" encoding="utf-8" optimize="on"/>
+
+        <javac srcdir="${test.dir}" destdir="${test.build.dir}" debug="on" classpathref="test.classpath"
+               deprecation="on"
+               includes="**/*.java" encoding="utf-8" optimize="on"/>
+
+        <copy todir="${src.build.dir}">
+            <fileset dir="${src.dir}">
+                <exclude name="**/*.java"/>
+                <include name="**/*.vm"/>
+                <include name="**/*.xml"/>
+                <include name="**/*.properties"/>
+            </fileset>
+            <fileset dir="${deploy_config.dir}"/>
+            <fileset dir="${src.config.dir}"/>
+        </copy>
+        <copy todir="${test.build.dir}">
+            <fileset dir="${test.dir}">
+                <exclude name="**/*.java"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <target name="unittest" depends="compile" description="unittest">
+        <junit fork="true" failureproperty="unit.tests.failed" printsummary="true" showoutput="yes">
+            <classpath refid="test.classpath"/>
+            <formatter type="brief" usefile="false"/>
+            <formatter type="xml"/>
+            <batchtest todir="${test.report.dir}">
+                <fileset dir="${test.build.dir}">
+                    <include name="**/*Test.class"/>
+                    <exclude name="**/Abstract*Test.class"/>
+                </fileset>
+            </batchtest>
+        </junit>
+        <antcall target="generate-test-report"/>
+        <fail message="Unit test failed" if="unit.tests.failed"/>
+    </target>
+
+    <target name="generate-test-report">
+        <junitreport todir="${test.report.dir}">
+            <fileset dir="${test.report.dir}">
+                <include name="TEST-*.xml"/>
+            </fileset>
+            <report format="frames" todir="${test.report.dir}/html"/>
+        </junitreport>
+    </target>
+
+
+    <target name="jarfile" depends="unittest" description="jarfile">
+        <jar basedir="${src.build.dir}" includes="**/*.*" destfile="${cmd.dir}/${project.name}.jar"
+             manifest="${src.build.dir}/META-INF/MANIFEST.MF">
+        </jar>
+        <copy todir="${cmd.dir}/lib">
+            <fileset dir="${lib.dir}">
+                <exclude name="**/*.java"/>
+                <exclude name="**/source/*.*"/>
+            </fileset>
+        </copy>
+        <copy todir="${cmd.dir}">
+            <fileset dir="${bat.dir}">
+            </fileset>
+        </copy>
+    </target>
+
+</project>
